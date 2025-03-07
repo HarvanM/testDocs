@@ -3,6 +3,7 @@ info:
   title: Charger API
   description: |-
     This is an API for managing charger settings. You can use it to retrieve and update settings used by the charger.
+    Local https server is running on the charger. The charger uses MDNS service to announce its IP address.
   termsOfService: http://swagger.io/terms/
   contact:
     email: apiteam@swagger.io
@@ -16,21 +17,14 @@ externalDocs:
   url: http://swagger.io
 
 servers:
-  - url: http://revc.io/api/v1
+  - url: http://revc{serial_number}.local/api/v1
 
 tags:
   - name: charger
     description: Everything about your charger
 
 paths:
-  /{serial_number}/settings:
-    parameters:
-      - name: serial_number
-        in: path
-        required: true
-        description: Serial number of the charger
-        schema:
-          type: string
+  /settings:
     get:
       tags:
         - charger
@@ -111,14 +105,7 @@ paths:
       security:
         - HMACAuth: []
           Timestamp: []
-  /{serial_number}/status:
-    parameters:
-      - name: serial_number
-        in: path
-        required: true
-        description: Serial number of the charger
-        schema:
-          type: string
+  /status:
     get: 
       tags:
         - charger
@@ -153,14 +140,7 @@ paths:
             application/text:
               example: "Charger not found."
 
-  /{serial_number}/history:
-    parameters:
-      - name: serial_number
-        in: path
-        required: true
-        description: Serial number of the charger
-        schema:
-          type: string
+  /history/charging:
     get:
       tags:
         - charger
@@ -220,14 +200,7 @@ paths:
           Timestamp: []
       
   
-  /{serial_number}/errors:
-    parameters:
-      - name: serial_number
-        in: path
-        required: true
-        description: Serial number of the charger
-        schema:
-          type: string
+  /history/errors:
     get:
       tags:
         - charger
@@ -286,14 +259,7 @@ paths:
           Timestamp: []
   
 
-  /{serial_number}/schedule:
-    parameters:
-      - name: serial_number
-        in: path
-        required: true
-        description: Serial number of the charger
-        schema:
-          type: string
+  /schedule:
     get:
       tags:
         - charger
@@ -358,14 +324,7 @@ paths:
         - HMACAuth: []
           Timestamp: []
   
-  /{serial_number}/info:
-    parameters:
-      - name: serial_number
-        in: path
-        required: true
-        description: Serial number of the charger
-        schema:
-          type: string
+  /info:
     get:
       summary: Get charger information
       description: Retrieve details about the charger, including owner, device, and connection info.
@@ -407,7 +366,78 @@ paths:
           content:
             application/text:
               example: "Charger not found."
-
+      security:
+        - HMACAuth: []
+          Timestamp: []
+  /error:
+    get:
+      summary: Get current charger error
+      description: Retrieve current charger error.
+      operationId: getChargerError
+      tags:
+        - charger
+      responses:
+        '200':
+          description: Charger error retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentError'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
+    patch:
+      summary: Update current charger error
+      description: Update current charger error.
+      operationId: updateChargerError
+      tags:
+        - charger
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isConfirm:
+                  type: boolean
+                  description: "Indicates if the error is confirmed."
+                  example: true
+                isShow:
+                  type: boolean
+                  description: "Indicates if the error should be shown."
+                  example: false
+      responses:
+        '200':
+          description: Charger error updated successfully.
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
       security:
         - HMACAuth: []
           Timestamp: []
@@ -777,6 +807,38 @@ components:
           maxLength: 32
           description: "Unique identifier for the owner."
           example: "user_12345"
+
+    CurrentError:
+      type: object
+      properties:
+        timestamp:
+          type: integer
+          format: int64
+          description: "Timestamp in milliseconds."
+          example: 1632950395000
+        infoCode:
+          type: integer
+          format: int32
+          description: "Info code associated with the error."
+          example: 1001
+        type:
+          type: integer
+          format: int32
+          description: "Type of the error."
+          example: 3
+        errorCode:
+          type: integer
+          format: int32
+          description: "Error code."
+          example: 4
+        isConfirm:
+          type: boolean
+          description: "Indicates if the error is confirmed."
+          example: true
+        isShow:
+          type: boolean
+          description: "Indicates if the error should be shown."
+          example: false
 
     DeviceInfo:
       type: object
