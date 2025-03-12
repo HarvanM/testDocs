@@ -20,11 +20,431 @@ servers:
   - url: http://revc{serial_number}.local/api/v1
 
 tags:
+  - name: internal
+    description: Internal part of the API, used only for Mobile App communication.
   - name: charger
-    description: Everything about your charger
+    description: Charger settings and status.
 
 paths:
-  /settings:
+  /internal/settings:
+    get:
+      tags:
+        - internal
+      summary: Get current charger settings
+      description: Retrieve the current settings used by the charger.
+      operationId: getCharger
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
+
+    patch:
+      tags:
+        - internal
+      summary: Update charger settings
+      description: Update charger settings. The charger will only accept settings with a timestamp newer than its current one. Include only the objects you wish to change.
+      operationId: updateSettings
+      requestBody:
+        description: Updated charger settings. Timestamp is required. Include only objects you wish to change.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Settings'
+        required: true
+      responses:
+        '200':
+          description: Successful update. Function will report currently used settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
+  /internal/status:
+    get: 
+      tags:
+        - internal
+      summary: Get charging status
+      description: Get informations about current charging session and charger status.
+      operationId: getStatus
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargingStatus'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+
+  /internal/history/charging:
+    get:
+      tags:
+        - internal
+      summary: Get charging session history.
+      description: Retrieve charging history from charger.
+      operationId: getHistory
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargingHistoryArray'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
+
+    delete:
+      tags:
+        - internal
+      summary: Delete charging session history.
+      description: Delete all charging history from charger.
+      operationId: deleteHistory
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+      security:
+        - HMACAuth: []
+          Timestamp: []
+      
+  
+  /internal/history/errors:
+    get:
+      tags:
+        - internal
+      summary: "Get the list of charger errors"
+      description: "Returns an array of charger errors."
+      operationId: "getChargerErrors"
+      responses:
+        '200':
+          description: "An array of ChargerError objects representing error history."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargerErrorArray'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
+    delete:
+      tags:
+        - internal
+      summary: "Delete charger error history"
+      description: "Delete all charger errors."
+      operationId: "deleteChargerErrors"
+      responses:
+        '200':
+          description: "Charger error history deleted successfully."
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+      security:
+        - HMACAuth: []
+          Timestamp: []
+  
+
+  /internal/schedule:
+    get:
+      tags:
+        - internal
+      summary: "Get charging scheduler settings and planned events"
+      description: "Returns scheduler settings, and planned events for each week."
+      operationId: "getSchedule"
+      responses:
+        '200':
+          description: "Charging schedule settings and events."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
+
+    put:
+      tags:
+        - internal
+      summary: "Update charging schedule"
+      description: "Update the scheduler settings and planned events."
+      operationId: "updateSchedule"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+      responses:
+        '200':
+          description: "Schedules updated successfully."
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+      security:
+        - HMACAuth: []
+          Timestamp: []
+  
+  /internal/info:
+    get:
+      summary: Get charger information
+      description: Retrieve details about the charger, including owner, device, and connection info.
+      operationId: getChargerInfo
+      tags:
+        - internal
+      responses:
+        '200':
+          description: Charger information retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  owner:
+                    $ref: '#/components/schemas/OwnerInfo'
+                  device:
+                    $ref: '#/components/schemas/DeviceInfo'
+                  connection:
+                    $ref: '#/components/schemas/Connection'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
+  /internal/error:
+    get:
+      summary: Get current charger error
+      description: Retrieve current charger error.
+      operationId: getChargerError
+      tags:
+        - internal
+      responses:
+        '200':
+          description: Charger error retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentError'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
+    patch:
+      summary: Update current charger error
+      description: Update current charger error.
+      operationId: updateChargerError
+      tags:
+        - internal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isConfirm:
+                  type: boolean
+                  description: "Indicates if the error is confirmed."
+                  example: true
+                isShow:
+                  type: boolean
+                  description: "Indicates if the error should be shown."
+                  example: false
+      responses:
+        '200':
+          description: Charger error updated successfully.
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+      security:
+        - HMACAuth: []
+          Timestamp: []
+
+  /charger/settings:
     get:
       tags:
         - charger
@@ -105,7 +525,7 @@ paths:
       security:
         - HMACAuth: []
           Timestamp: []
-  /status:
+  /charger/status:
     get: 
       tags:
         - charger
@@ -140,308 +560,6 @@ paths:
             application/text:
               example: "Charger not found."
 
-  /history/charging:
-    get:
-      tags:
-        - charger
-      summary: Get charging session history.
-      description: Retrieve charging history from charger.
-      operationId: getHistory
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChargingHistoryArray'
-        '400':
-          description: Invalid request
-          content:
-            application/text:
-              example: "The request is invalid."
-        '401':
-          description: Unauthorized
-          content:
-            application/text:
-              example: "Authorization error."
-        '403':
-          description: Forbidden
-          content:
-            application/text:
-              example: "Forbidden access."
-        '404':
-          description: Not found
-          content:
-            application/text:
-              example: "Charger not found."
-      security:
-        - HMACAuth: []
-          Timestamp: []
-
-    delete:
-      tags:
-        - charger
-      summary: Delete charging session history.
-      description: Delete all charging history from charger.
-      operationId: deleteHistory
-      responses:
-        '200':
-          description: Successful operation
-        '400':
-          description: Invalid request
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: Not found
-      security:
-        - HMACAuth: []
-          Timestamp: []
-      
-  
-  /history/errors:
-    get:
-      tags:
-        - charger
-      summary: "Get the list of charger errors"
-      description: "Returns an array of charger errors."
-      operationId: "getChargerErrors"
-      responses:
-        '200':
-          description: "An array of ChargerError objects representing error history."
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChargerErrorArray'
-        '400':
-          description: Invalid request
-          content:
-            application/text:
-              example: "The request is invalid."
-        '401':
-          description: Unauthorized
-          content:
-            application/text:
-              example: "Authorization error."
-        '403':
-          description: Forbidden
-          content:
-            application/text:
-              example: "Forbidden access."
-        '404':
-          description: Not found
-          content:
-            application/text:
-              example: "Charger not found."
-      security:
-        - HMACAuth: []
-          Timestamp: []
-    delete:
-      tags:
-        - charger
-      summary: "Delete charger error history"
-      description: "Delete all charger errors."
-      operationId: "deleteChargerErrors"
-      responses:
-        '200':
-          description: "Charger error history deleted successfully."
-        '400':
-          description: Invalid request
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: Not found
-      security:
-        - HMACAuth: []
-          Timestamp: []
-  
-
-  /schedule:
-    get:
-      tags:
-        - charger
-      summary: "Get charging scheduler settings and planned events"
-      description: "Returns scheduler settings, and planned events for each week."
-      operationId: "getSchedule"
-      responses:
-        '200':
-          description: "Charging schedule settings and events."
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Schedule'
-        '400':
-          description: Invalid request
-          content:
-            application/text:
-              example: "The request is invalid."
-        '401':
-          description: Unauthorized
-          content:
-            application/text:
-              example: "Authorization error."
-        '403':
-          description: Forbidden
-          content:
-            application/text:
-              example: "Forbidden access."
-        '404':
-          description: Not found
-          content:
-            application/text:
-              example: "Charger not found."
-      security:
-        - HMACAuth: []
-          Timestamp: []
-
-    put:
-      tags:
-        - charger
-      summary: "Update charging schedule"
-      description: "Update the scheduler settings and planned events."
-      operationId: "updateSchedule"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Schedule'
-      responses:
-        '200':
-          description: "Schedules updated successfully."
-        '400':
-          description: Invalid request
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: Not found
-      security:
-        - HMACAuth: []
-          Timestamp: []
-  
-  /info:
-    get:
-      summary: Get charger information
-      description: Retrieve details about the charger, including owner, device, and connection info.
-      operationId: getChargerInfo
-      tags:
-        - charger
-      responses:
-        '200':
-          description: Charger information retrieved successfully.
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: false
-                properties:
-                  owner:
-                    $ref: '#/components/schemas/OwnerInfo'
-                  device:
-                    $ref: '#/components/schemas/DeviceInfo'
-                  connection:
-                    $ref: '#/components/schemas/Connection'
-        '400':
-          description: Invalid request
-          content:
-            application/text:
-              example: "The request is invalid."
-        '401':
-          description: Unauthorized
-          content:
-            application/text:
-              example: "Authorization error."
-        '403':
-          description: Forbidden
-          content:
-            application/text:
-              example: "Forbidden access."
-        '404':
-          description: Not found
-          content:
-            application/text:
-              example: "Charger not found."
-      security:
-        - HMACAuth: []
-          Timestamp: []
-  /error:
-    get:
-      summary: Get current charger error
-      description: Retrieve current charger error.
-      operationId: getChargerError
-      tags:
-        - charger
-      responses:
-        '200':
-          description: Charger error retrieved successfully.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CurrentError'
-        '400':
-          description: Invalid request
-          content:
-            application/text:
-              example: "The request is invalid."
-        '401':
-          description: Unauthorized
-          content:
-            application/text:
-              example: "Authorization error."
-        '403':
-          description: Forbidden
-          content:
-            application/text:
-              example: "Forbidden access."
-        '404':
-          description: Not found
-          content:
-            application/text:
-              example: "Charger not found."
-      security:
-        - HMACAuth: []
-          Timestamp: []
-    patch:
-      summary: Update current charger error
-      description: Update current charger error.
-      operationId: updateChargerError
-      tags:
-        - charger
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                isConfirm:
-                  type: boolean
-                  description: "Indicates if the error is confirmed."
-                  example: true
-                isShow:
-                  type: boolean
-                  description: "Indicates if the error should be shown."
-                  example: false
-      responses:
-        '200':
-          description: Charger error updated successfully.
-        '400':
-          description: Invalid request
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-        '404':
-          description: Not found
-      security:
-        - HMACAuth: []
-          Timestamp: []
-
 components:
   schemas:
     Settings:
@@ -455,27 +573,27 @@ components:
           format: int64
           description: "Timestamp in milliseconds."
           example: 1740651562487
-        boost_time:
+        boostTime:
           type: integer
           format: int32
           description: "Boost time in seconds (default: 12 hours)."
           example: 43200
-        kwh_price:
+        kwhPrice:
           type: number
           format: float
           description: "Cost per kWh in set currency (e.g. 1.5€ per kWh)."
           example: 1.5
-        target_current:
+        targetCurrent:
           type: integer
           format: int32
           description: "Target charging current (A)."
           example: 6
-        boost_current:
+        boostCurrent:
           type: integer
           format: int32
           description: "Boost charging current (A). Boost current is used when the boost charging is enabled. Boost will automatically turn off after set time."
           example: 16
-        max_current:
+        maxCurrent:
           type: integer
           format: int32
           description: "Maximum charging current (A). Maximum current is used mostly when the user has breaker with lower current rating, or other apliences on the same circuit. Charger will never set target current above maximum."
@@ -485,19 +603,19 @@ components:
           enum: [EUR, CZK, USD]
           description: "Currency for charging cost calculations."
           example: "EUR"
-        is_charging_enable:
+        chargingEnable:
           type: boolean
           description: "Enable or disable charging."
           example: true
-        is_three_phase_mode_enable:
+        threePhaseModeEnable:
           type: boolean
           description: "Enable or disable three-phase mode."
           example: true
-        is_boost_mode_enable:
+        boostModeEnable:
           type: boolean
           description: "Enable or disable boost mode."
           example: false
-        is_local_panel_enable:
+        localPanelEnable:
           type: boolean
           description: "Enable or disable local panel control."
           example: true
@@ -518,86 +636,86 @@ components:
           format: int64
           description: "Current timestamp in milliseconds."
           example: 1740651562487
-        charged_energy:
+        chargedEnergy:
           type: number
           format: float
           description: "Total charged energy in kWh. Resets on charger reboot."
           example: 12.5
-        charging_time:
+        chargingTime:
           type: integer
           format: int32
           description: "Duration of the current charging session in seconds."
           example: 3600
-        remaining_boost_time:
+        remainingBoostTime:
           type: integer
           format: int32
           description: "Remaining boost time in seconds. Resets when the car is disconnected."
           example: 1200
-        currentPower:
+        actualPower:
           type: integer
           format: int32
           description: "Measured charging power in watts (W)."
           example: 3500
-        current_l1:
+        currentL1:
           type: number
           format: float
           description: "Measured current for phase L1 in amps (A)."
           example: 12.8
-        current_l2:
+        currentL2:
           type: number
           format: float
           description: "Measured current for phase L2 in amps (A)."
           example: 12.7
-        current_l3:
+        currentL3:
           type: number
           format: float
           description: "Measured current for phase L3 in amps (A)."
           example: 12.6
-        voltage_l1:
+        voltageL1:
           type: number
           format: float
           description: "Voltage for phase L1 in volts (V)."
           example: 230.2
-        voltage_l2:
+        voltageL2:
           type: number
           format: float
           description: "Voltage for phase L2 in volts (V)."
           example: 234.1
-        voltage_l3:
+        voltageL3:
           type: number
           format: float
           description: "Voltage for phase L3 in volts (V)."
           example: 228.9
-        is_charging:
+        isCharging:
           type: boolean
           description: "Indicates if the charger is currently charging."
           example: true
-        is_boost_mode_available:
+        isBoostModeAvailable:
           type: boolean
           description: "Indicates if boost mode is available."
           example: true
-        is_boost_mode_active:
+        isBoostModeActive:
           type: boolean
           description: "Indicates if boost mode is currently active."
           example: false
-        is_three_phase_mode_available:
+        isThreePhaseModeAvailable:
           type: boolean
           description: "Indicates if three-phase mode is available."
           example: true
-        is_three_phase_mode_active:
+        isThreePhaseModeActive:
           type: boolean
           description: "Indicates if three-phase mode is currently active."
           example: false
-        is_vehicle_connected:
+        isVehicleConnected:
           type: boolean
           description: "Indicates if a vehicle is connected to the charger."
           example: true
-        temperature_current_limit:
+        temperatureCurrentLimit:
           type: integer
           format: int32
           description: "0 - no current limit, otherwise the number represents the limited target current"
           example: 0
-        adapter_max_current:
+        adapterMaxCurrent:
           type: integer
           format: int32
           description: "Maximum current allowed by the adapter in amps (A)."
@@ -608,17 +726,17 @@ components:
     ChargingHistory:
       type: object
       properties:
-        start_time:
+        startTime:
           type: integer
           format: int64
           description: "Charging session start time in milliseconds."
           example: 1632950395000
-        end_time:
+        endTime:
           type: integer
           format: int64
           description: "Charging session end time in milliseconds."
           example: 1632950995000
-        charged_energy:
+        chargedEnergy:
           type: number
           format: float
           description: "Charged kWh during charging session"
@@ -650,7 +768,7 @@ components:
             - USD
           description: "Currency in which is the charging cost represented"
           example: "EUR"
-        charging_mode:
+        chargingMode:
           type: string
           enum:
             - NORMAL
@@ -672,12 +790,12 @@ components:
           format: int64
           description: "Timestamp in milliseconds."
           example: 1632950395000
-        info_code:
+        infoCode:
           type: integer
           format: int32
           description: "Info code associated with the error."
           example: 1001
-        error_code:
+        errorCode:
           type: string
           enum:
             - NONE
@@ -699,7 +817,7 @@ components:
             - CAR_ERROR
           description: "Error code representing the type of error."
           example: "NONE"
-        debug_info:
+        debugInfo:
           type: array
           items:
             type: integer
@@ -724,7 +842,7 @@ components:
           format: int64
           description: "Timestamp in milliseconds."
           example: 1740651562487
-        is_enable:
+        isEnable:
           type: boolean
           description: "Indicates if the charging schedule is enabled."
           example: true
@@ -732,22 +850,22 @@ components:
     SchedulerEvents:
       type: object
       properties:
-        start_time:
+        startTime:
           type: integer
           format: int64
           description: "Event start time (relative time in seconds starting monday 2025.01.06 0:00, ending sunday 2025.01.12 23:59"
           example: 1740652000000
-        energy_limit:
+        energyLimit:
           type: number
           format: float
           description: "Energy limit in kWh. When limit reached, charger will stop. If limit == 0 - unlimited charging."
           example: 3.2
-        price_limit:
+        priceLimit:
           type: number
           format: float
           description: "Price limit in set currency. When limit reached, charger will stop. If limit == 0 - unlimited charging."
           example: 121.0
-        max_current:
+        maxCurrent:
           type: integer
           format: int32
           description: "Maximum charging current (A)."
@@ -757,7 +875,7 @@ components:
           enum: [NONE, START_CHARGING, STOP_CHARGING]
           description: "Type of the scheduled event."
           example: "START_CHARGING"
-        is_three_phase_enable:
+        isThreePhaseEnable:
           type: boolean
           description: "Enable or disable three-phase charging."
           example: false
@@ -768,9 +886,9 @@ components:
       type: object
       additionalProperties: false
       properties:
-        scheduler_settings:
+        schedulerSettings:
           $ref: '#/components/schemas/SchedulerSettings'
-        scheduler_events:
+        schedulerEvents:
           type: array
           items:
             $ref: '#/components/schemas/SchedulerEvents'
@@ -848,20 +966,20 @@ components:
           format: int64
           description: "Manufacture date timestamp"
           example: 1740651562487
-        hw_version:
+        hwVersion:
           type: string
           description: "Hardware version."
           example: "A"
-        fw_version:
+        fwVersion:
           type: string
           description: "Firmware version."
           example: "1.32"
-        serial_number:
+        serialNumber:
           type: string
           maxLength: 12
           description: "Serial number of the charger."
           example: "110200000010"
-        charger_name:
+        chargerName:
           type: string
           maxLength: 20
           description: "Name of the charger."
@@ -882,7 +1000,7 @@ components:
           enum: [BAD, GOOD, EXCELLENT]
           description: "Connection status."
           example: "GOOD"
-        wifi_name:
+        wifiName:
           type: string
           maxLength: 32
           description: "Name of the connected WiFi network."
