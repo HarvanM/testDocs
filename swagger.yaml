@@ -259,7 +259,7 @@ paths:
       security:
         - HMACAuth: []
           Timestamp: []
-  
+
 
   /internal/schedule:
     get:
@@ -325,11 +325,11 @@ paths:
       security:
         - HMACAuth: []
           Timestamp: []
-  
+
   /internal/info:
     get:
       summary: Get charger information
-      description: Retrieve details about the charger, including owner, device, and connection info.
+      description: Retrieve details about the charger.
       operationId: getChargerInfo
       tags:
         - internal
@@ -339,15 +339,83 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: false
-                properties:
-                  owner:
-                    $ref: '#/components/schemas/OwnerInfo'
-                  device:
-                    $ref: '#/components/schemas/DeviceInfo'
-                  connection:
-                    $ref: '#/components/schemas/Connection'
+                $ref: '#/components/schemas/DeviceInfo'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
+
+  /internal/owner:
+    get:
+      summary: Get owner information
+      description: Retrieve details about the owner.
+      operationId: getOwnerInfo
+      tags:
+        - internal
+      responses:
+        '200':
+          description: Owner information retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerInfo'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
+
+  /internal/connection:
+    get:
+      summary: Get charger connection information
+      description: Retrieve details about the charger connection.
+      operationId: getConnectionInfo
+      tags:
+        - internal
+      responses:
+        '200':
+          description: Charger connection data retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Connection'
         '400':
           description: Invalid request
           content:
@@ -450,7 +518,7 @@ paths:
         - charger
       summary: Get current charger settings
       description: Retrieve the current settings used by the charger.
-      operationId: getCharger
+      operationId: chargerGetCharger
       responses:
         '200':
           description: Successful operation
@@ -487,7 +555,7 @@ paths:
         - charger
       summary: Update charger settings
       description: Update charger settings. The charger will only accept settings with a timestamp newer than its current one. Include only the objects you wish to change.
-      operationId: updateSettings
+      operationId: chargerUpdateSettings
       requestBody:
         description: Updated charger settings. Timestamp is required. Include only objects you wish to change.
         content:
@@ -531,7 +599,7 @@ paths:
         - charger
       summary: Get charging status
       description: Get informations about current charging session and charger status.
-      operationId: getStatus
+      operationId: chargerGetStatus
       responses:
         '200':
           description: Successful operation
@@ -560,6 +628,43 @@ paths:
             application/text:
               example: "Charger not found."
 
+  /charger/error:
+    get:
+      summary: Get current charger error
+      description: Retrieve current charger error.
+      operationId: chargerGetChargerError
+      tags:
+        - charger
+      responses:
+        '200':
+          description: Charger error retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentError'
+        '400':
+          description: Invalid request
+          content:
+            application/text:
+              example: "The request is invalid."
+        '401':
+          description: Unauthorized
+          content:
+            application/text:
+              example: "Authorization error."
+        '403':
+          description: Forbidden
+          content:
+            application/text:
+              example: "Forbidden access."
+        '404':
+          description: Not found
+          content:
+            application/text:
+              example: "Charger not found."
+      security:
+        - HMACAuth: []
+          Timestamp: []
 components:
   schemas:
     Settings:
@@ -599,35 +704,32 @@ components:
           description: "Maximum charging current (A). Maximum current is used mostly when the user has breaker with lower current rating, or other apliences on the same circuit. Charger will never set target current above maximum."
           example: 16
         currency:
-          type: string
-          enum: [EUR, CZK, USD]
-          description: "Currency for charging cost calculations."
-          example: "EUR"
-        chargingEnable:
+          type: integer
+          enum: [0, 1, 2]
+          description: |
+            Currency used for charging cost calculation.
+            - `0`: EUR
+            - `1`: CZK
+            - `2`: USD
+          example: 0
+        isChargingEnable:
           type: boolean
           description: "Enable or disable charging."
           example: true
-        threePhaseModeEnable:
+        isThreePhaseModeEnable:
           type: boolean
           description: "Enable or disable three-phase mode."
           example: true
-        boostModeEnable:
+        isBoostModeEnable:
           type: boolean
           description: "Enable or disable boost mode."
           example: false
-        localPanelEnable:
+        isLocalPanelEnable:
           type: boolean
           description: "Enable or disable local panel control."
           example: true
           
     ChargingStatus:
-      required:
-        - currentTime
-        - charged_energy
-        - charging_time
-        - currentPower
-        - is_charging
-        - is_vehicle_connected
       type: object
       additionalProperties: false
       properties:
@@ -641,6 +743,11 @@ components:
           format: float
           description: "Total charged energy in kWh. Resets on charger reboot."
           example: 12.5
+        chargingCost:
+          type: number
+          format: float
+          description: "Total charging cost in selected currency. Resets on charger reboot."
+          example: 15.5
         chargingTime:
           type: integer
           format: int32
@@ -652,10 +759,10 @@ components:
           description: "Remaining boost time in seconds. Resets when the car is disconnected."
           example: 1200
         actualPower:
-          type: integer
-          format: int32
-          description: "Measured charging power in watts (W)."
-          example: 3500
+          type: number
+          format: float
+          description: "Measured charging power in kW."
+          example: 3.5
         currentL1:
           type: number
           format: float
@@ -710,6 +817,10 @@ components:
           type: boolean
           description: "Indicates if a vehicle is connected to the charger."
           example: true
+        isChargingScheduleActive:
+          type: boolean
+          description: "Indicates if the charging schedule is currently active. You can't control charger manually when the schedule is active."
+          example: false
         temperatureCurrentLimit:
           type: integer
           format: int32
@@ -754,27 +865,30 @@ components:
           description: "Measured charging power in kW sampled with 15 minute period."
           example: [0, 2.3, 2.4, 2.3, 2.2, 0, 0]
         type:
-          type: string
-          enum:
-            - PRIVATE
-            - PUBLIC
-          description: "Type of charging session."
-          example: "PRIVATE"
+          type: integer
+          enum: [0, 1]
+          description: |
+            Type of the charging session.
+            - `0`: Private charging session
+            - `1`: Public charging session
+          example: 0
         currency:
-          type: string
-          enum:
-            - EUR
-            - CZK
-            - USD
-          description: "Currency in which is the charging cost represented"
-          example: "EUR"
+          type: integer
+          enum: [0, 1, 2]
+          description: |
+            Currency used for charging cost calculation.
+            - `0`: EUR
+            - `1`: CZK
+            - `2`: USD
+          example: 0
         chargingMode:
-          type: string
-          enum:
-            - NORMAL
-            - MODE_3
-          description: "Type of charging mode."
-          example: "NORMAL"
+          type: integer
+          enum: [0, 1]
+          description: |
+            Charging mode.
+            - `0`: Normal charging
+            - `1`: Mode 3 charging
+          example: 0
   
     ChargingHistoryArray:
       type: array
@@ -796,27 +910,28 @@ components:
           description: "Info code associated with the error."
           example: 1001
         errorCode:
-          type: string
-          enum:
-            - NONE
-            - GROUND
-            - NETWORK_TYPE_RECOGNITION
-            - N_WIRE_TEST
-            - RCD_TEST
-            - DIODE_TEST
-            - CONTROL_PILOT_TEST
-            - CURRENT_LEAKAGE
-            - RELAY_CONTACT
-            - HIGH_TEMPERATURE
-            - OVERVOLTAGE
-            - UNDERVOLTAGE
-            - MAINS_PLUG_OVERHEATING
-            - ADAPTER_DETECTION
-            - VENTILATION_REQUIRED
-            - HARDWARE_ERROR
-            - CAR_ERROR
-          description: "Error code representing the type of error."
-          example: "NONE"
+          type: integer
+          enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+          description: |
+            Error code.
+            - `0`: NONE
+            - `1`: GROUND
+            - `2`: NETWORK_TYPE_RECOGNITION
+            - `3`: N_WIRE_TEST
+            - `4`: RCD_TEST
+            - `5`: DIODE_TEST
+            - `6`: CONTROL_PILOT_TEST
+            - `7`: CURRENT_LEAKAGE
+            - `8`: RELAY_CONTACT
+            - `9`: HIGH_TEMPERATURE
+            - `10`: OVERVOLTAGE
+            - `11`: UNDERVOLTAGE
+            - `12`: MAINS_PLUG_OVERHEATING
+            - `13`: ADAPTER_DETECTION
+            - `14`: VENTILATION_REQUIRED
+            - `15`: HARDWARE_ERROR
+            - `16`: CAR_ERROR
+          example: 0
         debugInfo:
           type: array
           items:
@@ -834,7 +949,7 @@ components:
     SchedulerSettings:
       required:
         - timestamp
-        - is_enable
+        - isEnable
       type: object
       properties:
         timestamp:
@@ -871,10 +986,14 @@ components:
           description: "Maximum charging current (A)."
           example: 16
         type:
-          type: string
-          enum: [NONE, START_CHARGING, STOP_CHARGING]
-          description: "Type of the scheduled event."
-          example: "START_CHARGING"
+          type: integer
+          enum: [0, 1, 2]
+          description: | 
+            Type of the scheduled event.
+            - `0`: NONE
+            - `1`: START_CHARGING
+            - `2`: STOP_CHARGING
+          example: 1
         isThreePhaseEnable:
           type: boolean
           description: "Enable or disable three-phase charging."
@@ -991,15 +1110,24 @@ components:
         type:
           type: array
           items:
-            type: string
-            enum: [NONE, WIFI, LTE, BLUETOOTH]
-          description: "Connection types available."
-          example: ["WIFI", "LTE"]
+            type: integer
+            enum: [0, 1, 2, 3]
+          description: |
+            Connection types available.
+            - `0`: NONE
+            - `1`: WIFI
+            - `2`: LTE
+            - `3`: BLUETOOTH
+          example: [1, 2]
         status:
-          type: string
-          enum: [BAD, GOOD, EXCELLENT]
-          description: "Connection status."
-          example: "GOOD"
+          type: integer
+          enum: [0, 1, 2]
+          description: |
+            Connection status.
+            - `0`: BAD
+            - `1`: GOOD
+            - `2`: EXCELLENT
+          example: 2
         wifiName:
           type: string
           maxLength: 32
